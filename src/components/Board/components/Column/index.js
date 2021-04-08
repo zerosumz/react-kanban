@@ -1,15 +1,35 @@
-import { forwardRef } from 'react'
-import { Draggable } from 'react-beautiful-dnd'
-import Card from './components/Card'
-import withDroppable from '../../../withDroppable'
-import CardAdder from './components/CardAdder'
-import { pickPropOut } from '@services/utils'
+import {forwardRef} from 'react';
+import {Draggable} from 'react-beautiful-dnd';
+import Card from './components/Card';
+import withDroppable from '../../../withDroppable';
+import CardAdder from './components/CardAdder';
+import {pickPropOut} from '@services/utils';
 
 const ColumnEmptyPlaceholder = forwardRef((props, ref) => (
   <div ref={ref} style={{ minHeight: 'inherit', height: 'inherit' }} {...props} />
 ))
 
 const DroppableColumn = withDroppable(ColumnEmptyPlaceholder)
+
+const getStyle = (style) => {
+    const mergedStyle = {
+        height: '100%',
+        minHeight: '28px',
+        display: 'inline-block',
+        verticalAlign: 'top',
+        ...style,
+    };
+
+    if (style?.transform) {
+        const re = /(?<=translate\()[^,]+(?=,)/
+        const axisLockX = `translate(${style.transform.match(re)[0]}, 0px)`;
+        return {
+            ...mergedStyle,
+            transform: axisLockX,
+        };
+    }
+    return mergedStyle;
+}
 
 function Column({
   children,
@@ -20,29 +40,29 @@ function Column({
   disableCardDrag,
   onCardNew,
   allowAddCard,
+  isDragDisabled,
+  isDropDisabled,
+  className
 }) {
   return (
-    <Draggable draggableId={`column-draggable-${children.id}`} index={columnIndex} isDragDisabled={disableColumnDrag}>
-      {(columnProvided) => {
+    <Draggable draggableId={`column-draggable-${children.id}`} index={columnIndex} isDragDisabled={disableColumnDrag || isDragDisabled}>
+      {(columnProvided, draggableSnapshot) => {
         const draggablePropsWithoutStyle = pickPropOut(columnProvided.draggableProps, 'style')
 
         return (
           <div
             ref={columnProvided.innerRef}
             {...draggablePropsWithoutStyle}
-            style={{
-              height: '100%',
-              minHeight: '28px',
-              display: 'inline-block',
-              verticalAlign: 'top',
-              ...columnProvided.draggableProps.style,
-            }}
-            className='react-kanban-column'
+            style={getStyle(
+                columnProvided.draggableProps.style,
+                draggableSnapshot
+            )}
+            className={`react-kanban-column ${className}`}
             data-testid={`column-${children.id}`}
           >
             <div {...columnProvided.dragHandleProps}>{renderColumnHeader(children)}</div>
             {allowAddCard && <CardAdder column={children} onConfirm={onCardNew} />}
-            <DroppableColumn droppableId={String(children.id)}>
+            <DroppableColumn droppableId={String(children.id)} isDropDisabled={isDropDisabled}>
               {children.cards.length ? (
                 children.cards.map((card, index) => (
                   <Card
@@ -65,4 +85,51 @@ function Column({
   )
 }
 
-export default Column
+function FixedColumn({
+                       children,
+                       renderCard,
+                       renderColumnHeader,
+                       disableColumnDrag,
+                       disableCardDrag,
+                       onCardNew,
+                       allowAddCard,
+                       isDragDisabled,
+                       isDropDisabled,
+                       className,
+                     }) {
+  return (
+      <div
+          style={{
+            height       : '100%',
+            minHeight    : '28px',
+            display      : 'inline-block',
+            verticalAlign: 'top',
+          }}
+          className={`react-kanban-column ${className}`}
+          data-testid={`column-${children.id}`}
+      >
+        <div>{renderColumnHeader(children)}</div>
+        {allowAddCard && <CardAdder column={children} onConfirm={onCardNew}/>}
+        <DroppableColumn droppableId={String(children.id)}>
+          {children.cards.length ? (
+              children.cards.map((card, index) => (
+                  <Card
+                      key={card.id}
+                      index={index}
+                      renderCard={(dragging) => renderCard(children, card, dragging)}
+                      disableCardDrag={disableCardDrag}
+                  >
+                    {card}
+                  </Card>
+              ))
+          ) : (
+              <div className='react-kanban-card-skeleton'/>
+          )}
+        </DroppableColumn>
+      </div>
+  );
+}
+
+export {Column as default, FixedColumn};
+
+

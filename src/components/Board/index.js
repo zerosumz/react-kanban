@@ -1,6 +1,6 @@
 import { forwardRef, useState } from 'react'
 import { DragDropContext } from 'react-beautiful-dnd'
-import Column from './components/Column'
+import Column, {FixedColumn} from './components/Column'
 import ColumnAdder from './components/ColumnAdder'
 import withDroppable from '../withDroppable'
 import { when, partialRight } from '@services/utils'
@@ -229,12 +229,44 @@ function BoardContainer({
       : isMovingACardToAnotherPosition(coordinates) &&
         onCardDragEnd({ ...coordinates, subject: getCard(board, coordinates.source) })
   }
-
+  let sliced = board.columns.slice();
+  let [column, ...columns] = sliced;
   return (
     <DragDropContext onDragEnd={handleOnDragEnd}>
       <div style={{ overflowY: 'hidden', display: 'flex', alignItems: 'flex-start' }} className='react-kanban-board'>
+        {
+          column &&
+          <div style={{ whiteSpace: 'nowrap' }}>
+            <FixedColumn
+                renderCard={renderCard}
+                renderColumnHeader={(column) =>
+                    renderColumnHeader ? (
+                        renderColumnHeader(column)
+                    ) : (
+                        <DefaultColumnHeader
+                            allowRemoveColumn={allowRemoveColumn}
+                            onColumnRemove={onColumnRemove}
+                            allowRenameColumn={allowRenameColumn}
+                            onColumnRename={onColumnRename}
+                        >
+                          {column}
+                        </DefaultColumnHeader>
+                    )
+                }
+                disableColumnDrag={disableColumnDrag}
+                disableCardDrag={disableCardDrag}
+                onCardNew={onCardNew}
+                allowAddCard={allowAddCard}
+                isDropDisabled={column.isDropDisabled}
+                isDragDisabled={column.isDragDisabled}
+                className={column.className}
+            >
+              {column}
+            </FixedColumn>
+          </div>
+        }
         <DroppableBoard droppableId='board-droppable' direction='horizontal' type='BOARD'>
-          {board.columns.map((column, index) => (
+          {columns.map((column, index) => (
             <Column
               key={column.id}
               index={index}
@@ -257,6 +289,9 @@ function BoardContainer({
               disableCardDrag={disableCardDrag}
               onCardNew={onCardNew}
               allowAddCard={allowAddCard}
+              isDropDisabled={column.isDropDisabled}
+              isDragDisabled={column.isDragDisabled}
+              className={column.className}
             >
               {column}
             </Column>

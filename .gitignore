@@ -1,6 +1,6 @@
 node_modules
 coverage
-dist
+#dist
 yarn.lock
 .DS_Store
 cypress/screenshots
@@ -8,3 +8,9 @@ cypress/screenshots
 unit-coverage
 .projections.json
 .tool-versions
+
+
+/.idea
+*.iml
+.eslintcache
+*~
