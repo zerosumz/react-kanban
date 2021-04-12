@@ -21,8 +21,8 @@ const getStyle = (style) => {
     };
 
     if (style?.transform) {
-        const re = /(?<=translate\()[^,]+(?=,)/
-        const axisLockX = `translate(${style.transform.match(re)[0]}, 0px)`;
+        const re = /^.*\(([^,]+),.*$/;
+        const axisLockX = `translate(${style.transform.replace(re, '$1')}, 0px)`;
         return {
             ...mergedStyle,
             transform: axisLockX,
